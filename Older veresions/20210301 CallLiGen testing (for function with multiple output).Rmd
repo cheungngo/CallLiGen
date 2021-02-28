@@ -1,0 +1,272 @@
+---
+title: "20210301 CallLiGen testing (for function with multiple output)"
+author: "cheungngo"
+date: "3/1/2021"
+output: html_document
+---
+
+```{r, warning=FALSE}
+library(zeallot)
+```
+
+```{r}
+# Loading the data
+
+library(readxl)
+raw <- read_excel("~/call_gen_input.xlsx") ### need to save the input file as this name every time
+raw
+```
+
+```{r}
+### Setting up the variables
+
+set_up_var = function(raw) {
+  
+  which(raw$day=="NA")[1]
+  result = rep(NA, which(raw$day=="NA")[1] - 1)
+  result = as.array(result)
+  
+  ind_count = which(raw$index=="count")
+  count = raw[ind_count, 3:dim(raw)[2]]
+  
+  wecount = raw[which(raw$index=="wecount"), 3:dim(raw)[2]]
+  
+  day = raw$day[1:which(raw$day=="NA")[1] - 1]
+  
+  raww = raw[1:which(raw$day=="NA")[1] - 1, 3:dim(raw)[2]]
+  
+  return(list(result, count, wecount, day, raww))
+}
+```
+
+```{r}
+c(result, count, wecount, day, raww) %<-% set_up_var(raw)
+```
+
+```{r}
+### gen_PH
+
+gen_PH = function(result, count, wecount, day, raww) {
+  PH = which(day=="P")
+  for (i in PH) {
+    ind = which(raww[i,]==2)
+    dr = colnames(raww[,ind])
+    print(c(dr, i))
+    result[i] = dr
+    if (as.numeric(count[,ind]) > 0 ) {count[,ind] = as.numeric(count[,ind]) - 1}
+    if (as.numeric(wecount[,ind]) > 0) {wecount[,ind] = as.numeric(wecount[,ind]) - 1}
+  }
+  return(list(result, count, wecount))
+}
+```
+
+```{r}
+c(result, count, wecount) %<-% gen_PH(result, count, wecount, day, raww)
+
+result
+count
+wecount
+```
+
+```{r}
+### gen_WE
+
+gen_WE = function (result, count, wecount, day, raww) {
+  
+  rand = sample(which(raw$day=="E"))
+  
+  count_t = count[,which(count>0)] 
+  wedr = colnames(wecount)[which(wecount>(as.numeric(max(unlist(wecount[1,])))-1))]
+  count_t = count_t[,which(colnames(count_t) %in% wedr)]
+  
+  dr = colnames(count_t)
+  q_dr = sample(dr)
+  
+  r_dr = vector()
+  
+  for (i in rand) {
+  
+    for (j in q_dr) {
+      try(if (j %in% r_dr) {next})
+      
+      m = 0
+      
+      illegal = (i-2):(i+2)
+      illegal = illegal[which(illegal>0)]
+      illegal = illegal[which(illegal<which(raw$day=="NA")[1])]
+      filled = as.numeric(which(result==j))
+      for (k in filled) {
+        try(if (k %in% illegal) {m <- 1})
+      }
+      if (m==1) {next}
+      
+      idr = which(colnames(raww)==j)
+      nocall = which(unlist(raww[,idr]==1))
+      try(if (i %in% nocall) {next})
+      
+      print(c(j,i))
+      result[i] = j
+      count[,idr] = as.numeric(count[,idr]) - 1
+      r_dr = c(r_dr, j)
+      break
+    }
+  }
+  
+  return(list(result, count, wecount))
+}
+```
+
+```{r}
+c(result, count, wecount) %<-% gen_WE(result, count, wecount, day, raww)
+
+result
+count
+wecount
+```
+
+```{r}
+### gen_WD_spec
+
+gen_WD_spec = function(result, count, wecount, day, raww, raw) {
+  
+  WD = which(day=="D" & is.na(result)==T) # excluding the filled dates
+  rand = sample(WD)
+  
+  ind_count = which(raw$index=="count")
+  count_t = raw[ind_count, 3:dim(raw)[2]]
+  count_t = count_t[,which(count_t==1 & count==1)]
+
+  dr = colnames(count_t)
+  q_dr = sample(dr)
+
+  r_dr = vector()
+
+  for (i in rand) {
+    
+    for (j in q_dr) {
+      try(if (j %in% r_dr) {next})
+      
+      m = 0
+      
+      illegal = (i-2):(i+2)
+      illegal = illegal[which(illegal>0)]
+      illegal = illegal[which(illegal<which(raw$day=="NA")[1])]
+      filled = as.numeric(which(result==j))
+      for (k in filled) {
+        try(if (k %in% illegal) {m <- 1})
+      }
+      if (m==1) {next}
+      
+      idr = which(colnames(raww)==j)
+      nocall = which(unlist(raww[,idr]==1))
+      try(if (i %in% nocall) {next})
+      
+      print(c(j,i))
+      result[i] = j
+      count[,idr] = as.numeric(count[,idr]) - 1
+      r_dr = c(r_dr, j)
+      break
+    }
+  }
+  
+  return(list(result, count, wecount))
+}
+```
+
+
+```{r}
+c(result, count, wecount) %<-% gen_WD_spec(result, count, wecount, day, raww, raw)
+
+result
+count
+wecount
+```
+
+```{r}
+### gen_WD
+
+gen_WD = function (result, count, wecount, day, raww) {
+  
+  WD = which(day=="D" & is.na(result)==T) # excluding the filled dates
+  rand = sample(WD)
+  
+  count_t = count
+  count_t = count_t[,which(count_t>(as.numeric(max(unlist(count[1,])))-1))]
+  dr = colnames(count_t)
+  q_dr = sample(dr)
+
+  r_dr = vector()
+
+  for (i in rand) {
+    
+    for (j in q_dr) {
+      try(if (j %in% r_dr) {next})
+      
+      m = 0
+      
+      illegal = (i-2):(i+2)
+      illegal = illegal[which(illegal>0)]
+      illegal = illegal[which(illegal<which(raw$day=="NA")[1])]
+      filled = as.numeric(which(result==j))
+      for (k in filled) {
+        try(if (k %in% illegal) {m <- 1})
+      }
+      if (m==1) {next}
+      
+      idr = which(colnames(raww)==j)
+      nocall = which(unlist(raww[,idr]==1))
+      try(if (i %in% nocall) {next})
+      
+      print(c(j,i))
+      result[i] = j
+      count[,idr] = as.numeric(count[,idr]) - 1
+      r_dr = c(r_dr, j)
+      break
+    }
+  }
+  
+  return(list(result, count, wecount))
+}
+```
+
+```{r}
+for (i in 1:3) {
+  c(result, count, wecount) %<-% gen_WD(result, count, wecount, day, raww)
+}
+
+result
+count
+wecount
+```
+
+```{r}
+# goal
+unlist(raw[which(raw$index=="count"), 3:dim(raw)[2]])
+# result
+table(result)
+```
+
+### Combining everything
+
+```{r}
+colligen = function (raw, n_we, n_wd, wd_spec) {
+  
+  c(result, count, wecount, day, raww) %<-% set_up_var(raw)
+  
+  c(result, count, wecount) %<-% gen_PH(result, count, wecount, day, raww)
+  
+  for (i in 1:n_we) {c(result, count, wecount) %<-% gen_WE(result, count, wecount, day, raww)}
+  
+  if (wd_spec==T) {c(result, count, wecount) %<-% gen_WD_spec(result, count, wecount, day, raww, raw)}
+  
+  for (i in 1:n_wd) {c(result, count, wecount) %<-% gen_WD(result, count, wecount, day, raww)}
+  
+  return(list(result))
+}
+```
+
+```{r}
+result = colligen(raw, 1, 3, T)
+result
+```
+
