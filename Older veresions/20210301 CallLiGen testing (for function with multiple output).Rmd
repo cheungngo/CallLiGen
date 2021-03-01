@@ -249,9 +249,12 @@ table(result)
 ### Combining everything
 
 ```{r}
-colligen = function (raw, n_we, n_wd, wd_spec) {
+colligen = function (raw) {
   
   c(result, count, wecount, day, raww) %<-% set_up_var(raw)
+  n_we = max(unlist(wecount[1,]))
+  n_wd = max(unlist(count[1,]))
+  if (min(unlist(count[1,])) == 1) {wd_spec = T}
   
   c(result, count, wecount) %<-% gen_PH(result, count, wecount, day, raww)
   
@@ -266,7 +269,7 @@ colligen = function (raw, n_we, n_wd, wd_spec) {
 ```
 
 ```{r}
-result = colligen(raw, 1, 3, T)
+result = colligen(raw)
 result
 ```
 
