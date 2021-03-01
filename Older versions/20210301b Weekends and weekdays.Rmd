@@ -1,0 +1,54 @@
+---
+title: "20210301b Weekends and weekdays"
+author: "cheungngo"
+date: "1 March 2021"
+output: html_document
+---
+
+```{r}
+library(chron)
+library(Hmisc)
+library(stringr)
+```
+
+
+```{r}
+gen_days = function(year,month,def_weekend) {
+  day = as.Date(paste(year,month,"01", sep = "-"))
+  md = Hmisc::monthDays(day)
+  end = as.Date(paste(year,month,md, sep = "-"))
+  days = seq.Date(day, end, by = "days")
+  
+  daysf = format(days, format = "%d")
+  daysf = sapply(daysf, function (i) {
+    stringr::str_remove(i,"^0+")
+  })
+  
+  wd = sapply(days, function(i) {weekdays(i)})
+  try(if (def_weekend == "FS") {
+        we = which(wd == "Saturday" | wd == "Friday")
+      } else if (def_weekend == "FSS") {
+        we = which(wd == "Saturday" | wd == "Sunday" | wd == "Friday")
+      } else if (def_weekend == "SS") {
+        we = which(wd == "Saturday" | wd == "Sunday")
+      })
+  
+  wewd = rep("D", length(daysf))
+  wewd[we] = "E"
+  
+  return(wewd)
+}
+
+```
+
+```{r}
+weekdays(as.Date(paste("2021","03","01", sep = "-")))
+```
+
+```{r}
+d = gen_days(2021,3,"FSS")
+d
+```
+
+
+
