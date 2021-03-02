@@ -1,0 +1,71 @@
+---
+title: "20210302 Generation of template"
+author: "cheungngo"
+date: "2 March 2021"
+output: html_document
+---
+
+```{r}
+gen_days = function(year,month,def_weekend) {
+  day = as.Date(paste(year,month,"01", sep = "-"))
+  md = Hmisc::monthDays(day)
+  end = as.Date(paste(year,month,md, sep = "-"))
+  days = seq.Date(day, end, by = "days")
+  
+  daysf = format(days, format = "%d")
+  daysf = sapply(daysf, function (i) {
+    stringr::str_remove(i,"^0+")
+  })
+  
+  wd = sapply(days, function(i) {weekdays(i)})
+  try(if (def_weekend == "FS") {
+        we = which(wd == "Saturday" | wd == "Friday")
+      } else if (def_weekend == "FSS") {
+        we = which(wd == "Saturday" | wd == "Sunday" | wd == "Friday")
+      } else if (def_weekend == "SS") {
+        we = which(wd == "Saturday" | wd == "Sunday")
+      })
+  
+  wewd = rep("D", length(daysf))
+  wewd[we] = "E"
+  
+  return(wewd)
+}
+
+```
+
+```{r}
+collagen_template = function(candidate_no, year, month, def_weekend) {
+  
+  d = gen_days(year,month,def_weekend) 
+  
+  mat = matrix(nrow = 34, ncol = 2 + candidate_no) 
+  
+  mat[,1] = c(1:32, "count", "wecount")
+  
+  mat[,2] = c(d, rep("nil", 34-length(d)))
+  
+  mat[(1:length(d)),(3:(candidate_no+2))] = 0
+  mat[((length(d)+1):32),] = "nil"
+  mat[33,(3:(candidate_no+2))] = (length(d) %/% candidate_no) + 1
+  mat[34,(3:(candidate_no+2))] = (length(which(d=="E")) %/% candidate_no) + 1
+  
+  colnames(mat) = c("index", "day", LETTERS[seq(from = 1, to = candidate_no)])
+  mat = as.data.frame(mat)
+  
+  write.csv(mat,
+            paste("~/", "collagen_template-", as.character(Sys.Date()), ".csv", sep = ""),
+            row.names = F)
+  
+  print("Please check your working directory for the file 'collagen_template-yyyy-mm-dd.csv'")
+  print("yyyy-mm-dd refers to the date of today")
+}
+```
+
+```{r}
+collagen_template(13,
+                  2021,
+                  3,
+                  "SS")
+```
+

@@ -42,10 +42,6 @@ gen_days = function(year,month,def_weekend) {
 ```
 
 ```{r}
-weekdays(as.Date(paste("2021","03","01", sep = "-")))
-```
-
-```{r}
 d = gen_days(2021,3,"FSS")
 d
 ```

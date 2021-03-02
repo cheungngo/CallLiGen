@@ -22,18 +22,27 @@ raw
 
 set_up_var = function(raw) {
   
-  which(raw$day=="NA")[1]
-  result = rep(NA, which(raw$day=="NA")[1] - 1)
+  result = rep(NA, which(raw$day=="nil")[1] - 1)
   result = as.array(result)
   
+  day = raw$day[1:which(raw$day=="nil")[1] - 1]
+  raww = raw[1:which(raw$day=="nil")[1] - 1, 3:dim(raw)[2]]
+  
+  day = as.vector(day)
+  PHcount = apply(raww, 1, function(i) {
+    (length(which(i==2)))
+  })
+  PH = which(PHcount>0)
+  day[PH] = "P"
+  
   ind_count = which(raw$index=="count")
-  count = raw[ind_count, 3:dim(raw)[2]]
+  count = as.numeric(as.character(unlist(raw[ind_count, 3:dim(raw)[2]])))
+  names(count) = colnames(raww)
+  count = as.data.frame(t(count))
   
-  wecount = raw[which(raw$index=="wecount"), 3:dim(raw)[2]]
-  
-  day = raw$day[1:which(raw$day=="NA")[1] - 1]
-  
-  raww = raw[1:which(raw$day=="NA")[1] - 1, 3:dim(raw)[2]]
+  wecount = as.numeric(as.character(unlist(raw[34, 3:dim(raw)[2]]))) 
+  names(wecount) = colnames(raww)
+  wecount = as.data.frame(t(wecount))
   
   return(list(result, count, wecount, day, raww))
 }
@@ -43,18 +52,40 @@ set_up_var = function(raw) {
 c(result, count, wecount, day, raww) %<-% set_up_var(raw)
 ```
 
+
 ```{r}
 ### gen_PH
 
 gen_PH = function(result, count, wecount, day, raww) {
+  
   PH = which(day=="P")
+  
   for (i in PH) {
-    ind = which(raww[i,]==2)
-    dr = colnames(raww[,ind])
-    print(c(dr, i))
-    result[i] = dr
-    if (as.numeric(count[,ind]) > 0 ) {count[,ind] = as.numeric(count[,ind]) - 1}
-    if (as.numeric(wecount[,ind]) > 0) {wecount[,ind] = as.numeric(wecount[,ind]) - 1}
+    candidates = colnames(raww)[which(raww[i,]==2)]
+    if(length(candidates)>1) {
+      for (j in sample(candidates)) {
+        m = 0
+        illegal = (i-2):(i+2)
+        illegal = illegal[which(illegal>0)]
+        illegal = illegal[which(illegal<which(raw$day=="nil")[1])]
+        filled = as.numeric(which(result==j))
+        for (k in filled) {
+          try(if (k %in% illegal) {m <- 1})
+        }
+        if (m==1) {next}
+        
+        result[i] = j
+        idr = which(colnames(raww)==j)
+        if (count[,idr] > 0) {count[,idr] = as.numeric(count[,idr]) - 1}
+        break
+      }
+      
+    } else {
+      result[i] = candidates
+      idr = which(colnames(raww)==candidates)
+      if (count[,idr] > 0) {count[,idr] = as.numeric(count[,idr]) - 1}
+      }
+
   }
   return(list(result, count, wecount))
 }
@@ -68,12 +99,13 @@ count
 wecount
 ```
 
+
 ```{r}
 ### gen_WE
 
 gen_WE = function (result, count, wecount, day, raww) {
   
-  rand = sample(which(raw$day=="E"))
+  rand = sample(which(day=="E" & is.na(result)==T))
   
   count_t = count[,which(count>0)] 
   wedr = colnames(wecount)[which(wecount>(as.numeric(max(unlist(wecount[1,])))-1))]
@@ -93,7 +125,7 @@ gen_WE = function (result, count, wecount, day, raww) {
       
       illegal = (i-2):(i+2)
       illegal = illegal[which(illegal>0)]
-      illegal = illegal[which(illegal<which(raw$day=="NA")[1])]
+      illegal = illegal[which(illegal<which(raw$day=="nil")[1])]
       filled = as.numeric(which(result==j))
       for (k in filled) {
         try(if (k %in% illegal) {m <- 1})
@@ -104,9 +136,9 @@ gen_WE = function (result, count, wecount, day, raww) {
       nocall = which(unlist(raww[,idr]==1))
       try(if (i %in% nocall) {next})
       
-      print(c(j,i))
       result[i] = j
       count[,idr] = as.numeric(count[,idr]) - 1
+      wecount[,idr] = as.numeric(wecount[,idr]) - 1
       r_dr = c(r_dr, j)
       break
     }
@@ -115,6 +147,7 @@ gen_WE = function (result, count, wecount, day, raww) {
   return(list(result, count, wecount))
 }
 ```
+
 
 ```{r}
 c(result, count, wecount) %<-% gen_WE(result, count, wecount, day, raww)
@@ -150,7 +183,7 @@ gen_WD_spec = function(result, count, wecount, day, raww, raw) {
       
       illegal = (i-2):(i+2)
       illegal = illegal[which(illegal>0)]
-      illegal = illegal[which(illegal<which(raw$day=="NA")[1])]
+      illegal = illegal[which(illegal<which(raw$day=="nil")[1])]
       filled = as.numeric(which(result==j))
       for (k in filled) {
         try(if (k %in% illegal) {m <- 1})
@@ -161,7 +194,6 @@ gen_WD_spec = function(result, count, wecount, day, raww, raw) {
       nocall = which(unlist(raww[,idr]==1))
       try(if (i %in% nocall) {next})
       
-      print(c(j,i))
       result[i] = j
       count[,idr] = as.numeric(count[,idr]) - 1
       r_dr = c(r_dr, j)
@@ -206,7 +238,7 @@ gen_WD = function (result, count, wecount, day, raww) {
       
       illegal = (i-2):(i+2)
       illegal = illegal[which(illegal>0)]
-      illegal = illegal[which(illegal<which(raw$day=="NA")[1])]
+      illegal = illegal[which(illegal<which(raw$day=="nil")[1])]
       filled = as.numeric(which(result==j))
       for (k in filled) {
         try(if (k %in% illegal) {m <- 1})
@@ -217,7 +249,6 @@ gen_WD = function (result, count, wecount, day, raww) {
       nocall = which(unlist(raww[,idr]==1))
       try(if (i %in% nocall) {next})
       
-      print(c(j,i))
       result[i] = j
       count[,idr] = as.numeric(count[,idr]) - 1
       r_dr = c(r_dr, j)
@@ -254,7 +285,8 @@ collagen = function (raw) {
   c(result, count, wecount, day, raww) %<-% set_up_var(raw)
   n_we = max(unlist(wecount[1,]))
   n_wd = max(unlist(count[1,]))
-  if (min(unlist(count[1,])) == 1) {wd_spec = T}
+  wd_spec = F
+  if (min(unlist(count[1,])) == 1) {wd_spec <- T}
   
   c(result, count, wecount) %<-% gen_PH(result, count, wecount, day, raww)
   
@@ -264,12 +296,35 @@ collagen = function (raw) {
   
   for (i in 1:n_wd) {c(result, count, wecount) %<-% gen_WD(result, count, wecount, day, raww)}
   
-  return(list(result))
+  result = as.data.frame(cbind(1:length(result),day, result))
+  colnames(result) = c("Date", "D/E/P", "Allocation")
+  stat = table(result$"D/E/P", result$"Allocation")
+  
+  write.csv(result,
+            paste("~/", "collagen_result-", as.character(Sys.Date()), ".csv", sep = ""),
+            row.names = F)
+  
+  write.csv(stat,
+            paste("~/", "collagen_stat-", as.character(Sys.Date()), ".csv", sep = ""),
+            row.names = T)
+  
+  print("Please check your working directory for the file 'collagen_result-yyyy-mm-dd.csv' and 'collagen_stat-yyyy-mm-dd.csv'")
+  
+  return(list(result, stat))
 }
 ```
 
 ```{r}
-result = collagen(raw)
-result
+### function to read the template
+
+collagen_read = function() {
+  raw = read.csv(paste("~/", "collagen_template-", as.character(Sys.Date()), ".csv", sep = ""))
+  return(raw)
+}
 ```
 
+```{r}
+raw = collagen_read()
+
+collagen(raw)
+```
