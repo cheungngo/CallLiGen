@@ -1,11 +1,16 @@
 Package: CallLiGen
 Type: Package
-Title: What the Package Does (Title Case)
+Title: CallLiGen
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Author: Cheung Ngo
+Maintainer: Cheung Ngo <cheungngo@gmail.com>
+Description: A universal call list generator
+License: MIT
 Encoding: UTF-8
 LazyData: true
+Imports: 
+    zeallot,
+    chron,
+    Hmisc,
+    stringr
+RoxygenNote: 6.1.1
