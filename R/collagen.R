@@ -268,6 +268,8 @@ gen_WD = function (result, count, wecount, day, raww, raw) {
 #' collagen (raw)
 collagen = function (raw) {
   
+  library(zeallot)
+  
   c(result, count, wecount, day, raww) %<-% set_up_var(raw)
   n_we = max(unlist(wecount[1,]))
   n_wd = max(unlist(count[1,]))
