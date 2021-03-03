@@ -1,0 +1,40 @@
+---
+title: "Introducing CollLiGen"
+author: "cheungngo"
+date: "3 March 2021"
+output: html_document
+---
+
+##### This package is developed as a solution to call lists generation for all departments.  It concerned the peculiarities for the call lists in Hong Kong like "3-day-1-call".  It allows "request-no-call", and the administrator can choose if he/she thought that a specific candidate is better not call on a specific date.  "Request-to-call" is also allowed, and if more than one candidate request to call on a specific date, the program will proceed to a lottery.  It allows the administrator to choose how many calls in total, and how many weekend calls a candidate should be having, which is compatible with the hierachical call system in psychiatry (3:2:1 in some cluster for different trainee levels) and other scoring systems.  Administrator can allocate candidates to specific public holidays.
+
+##### All the administrator needs to do is to install the package, generate the "collagen template", fill in and load the template, and run the collagen() function.  These could be all done with 3 lines of code.
+
+### Installing the package
+
+```{r, eval=FALSE}
+install.packages("devtools") # devtools required to install packages from github
+library(devtools)
+
+devtools::install_github("cheungngo/CallLiGen") # installing the "CollLiGen" package; you may be asked for updating some other dependencies, just type in "n" will do
+```
+
+### Generating the template
+
+```{r, eval=FALSE}
+collagen_template(candidate_no = 13, # Number of candidates in the call list
+                  year = 2021, # which year the call list will be for
+                  month = 3, # which month the call list will be for
+                  def_weekend = "SS") # definition of "weekend"; "SS" for saturday and sunday, "FSS" for Fri/Sat/Sun, "FS" for Fri/Sat
+```
+
+### Loading the template after adjustment of the content
+
+```{r, eval=FALSE}
+x = collagen_read() # x could be any other name
+```
+
+### Running the program
+
+```{r, eval=FALSE}
+collagen(x)
+```
